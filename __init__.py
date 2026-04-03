@@ -6,8 +6,12 @@
 
 """Shopsense Env Environment."""
 
-from .client import ShopsenseEnv
-from .models import ShopsenseAction, ShopsenseObservation
+try:
+    from .client import ShopsenseEnv
+    from .models import ShopsenseAction, ShopsenseObservation
+except ImportError:
+    from client import ShopsenseEnv
+    from models import ShopsenseAction, ShopsenseObservation
 
 __all__ = [
     "ShopsenseAction",
