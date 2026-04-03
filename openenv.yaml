@@ -4,4 +4,27 @@ type: space
 runtime: fastapi
 app: server.app:app
 port: 8000
-
+description: >
+  ShopSense — A customer purchase prediction environment.
+  An AI agent learns individual buying patterns from transaction history
+  and predicts the next purchase category for each customer.
+tasks:
+  - id: easy
+    name: Single Customer Prediction
+    description: Predict purchases for one customer (Doctor 1 / C001). 20 steps.
+  - id: medium
+    name: Two Customer Prediction
+    description: Predict for two customers (C001 + C002). 30 steps.
+  - id: hard
+    name: All Customers Prediction
+    description: Predict for all 4 customers including Doctor 1 vs Doctor 2 disambiguation. 40 steps.
+action_space:
+  type: categorical
+  categories:
+    - medical
+    - sports
+    - stationary
+    - groceries
+    - fruits
+    - generic
+score_range: [0.0, 1.0]
