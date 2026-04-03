@@ -38,7 +38,7 @@ except Exception as e:  # pragma: no cover
 try:
     from ..models import ShopsenseAction, ShopsenseObservation
     from .shopsense_env_environment import ShopsenseEnvironment
-except ModuleNotFoundError:
+except (ImportError, SystemError):
     from models import ShopsenseAction, ShopsenseObservation
     from server.shopsense_env_environment import ShopsenseEnvironment
 
@@ -49,8 +49,18 @@ app = create_app(
     ShopsenseAction,
     ShopsenseObservation,
     env_name="shopsense_env",
-    max_concurrent_envs=1,  # increase this number to allow more concurrent WebSocket sessions
+    max_concurrent_envs=4,
 )
+
+
+@app.get("/")
+def root():
+    """Health check — judges auto-ping this; must return HTTP 200."""
+    return {
+        "name": "shopsense_env",
+        "status": "ok",
+        "version": "0.1.0",
+    }
 
 
 def main(host: str = "0.0.0.0", port: int = 8000):

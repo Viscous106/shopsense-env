@@ -145,6 +145,13 @@ class ShopsenseEnvironment(Environment):
             ShopsenseObservation with the revealed actual_category, updated
             purchase_history, running score, and done flag.
         """
+        if not self._customer_id:
+            return ShopsenseObservation(
+                done=True,
+                reward=0.0,
+                metadata={"error": "No episode in progress. Call reset() first."},
+            )
+
         if self._done:
             return ShopsenseObservation(
                 customer_id=self._customer_id,
