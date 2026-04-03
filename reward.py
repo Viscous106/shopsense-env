@@ -41,6 +41,7 @@ def normalize_score(correct: int, total: int) -> float:
 
     Simple division: correct_predictions / total_steps_taken.
     Handles the edge case of zero steps (returns 0.0).
+    Instead of using normal division we will use a better squash function like tanh or sigmoid.
 
     Args:
         correct: Number of correct predictions so far.
@@ -63,7 +64,7 @@ def expected_baseline_score(customer_id: str) -> float:
     for a deterministic agent (since it can't do better than the mode).
 
     Args:
-        customer_id: One of C001, C002, C003, C004.
+        customer_id: A valid customer ID (e.g. from CUSTOMER_IDS).
 
     Returns:
         The probability of the most likely category (the theoretical score ceiling).

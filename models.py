@@ -86,7 +86,7 @@ class ShopsenseObservation(Observation):
     )
     customer_id: str = Field(
         default="",
-        description="The current customer's ID (C001, C002, C003, or C004)",
+        description="The current customer's ID",
     )
 
     # In-context learning signal — grows each step
