@@ -253,18 +253,138 @@ app = create_app(
 **File:** `inference.py` — **MUST be in the ROOT of the repo, not in a subfolder**
 **Branch:** `feature/inference`
 
-### Env vars it reads:
+### Env vars (from `.env.example`):
 ```bash
-API_BASE_URL=<LLM API endpoint>
-MODEL_NAME=<e.g. meta-llama/Llama-3-8b-instruct>
-HF_TOKEN=<Hugging Face token>
+API_BASE_URL=https://api-inference.huggingface.co/v1
+MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
+HF_TOKEN=hf_your_token_here
 ```
 
-### Flow:
-1. Connect to LLM via OpenAI-compatible client
-2. Run Easy → Medium → Hard tasks sequentially
-3. For each step: give LLM the purchase history, ask it to predict next category
-4. Print structured stdout logs (judges parse these)
+### Full working implementation:
+
+```python
+"""
+inference.py — LLM Agent for ShopSense Environment
+Must be in the ROOT of the repo.
+"""
+
+import os
+import json
+from openai import OpenAI
+from shopsense_env import ShopsenseEnv, ShopsenseAction
+
+# ── Config from env vars ──────────────────────────────────────────────────────
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://api-inference.huggingface.co/v1")
+MODEL_NAME   = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
+HF_TOKEN     = os.environ.get("HF_TOKEN", "")
+ENV_URL      = os.environ.get("ENV_URL", "http://localhost:8000")  # HF Space URL when deployed
+
+CATEGORIES = ["Medicines", "Snacks", "Electronics", "Clothing"]
+
+# ── LLM client (OpenAI-compatible) ───────────────────────────────────────────
+llm = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+
+
+def predict_category(customer_id: str, purchase_history: list[str]) -> str:
+    """Ask the LLM to predict the next purchase category."""
+    history_str = ", ".join(purchase_history) if purchase_history else "none"
+    prompt = f"""You are predicting the next purchase category for a customer in a shop.
+
+Customer ID: {customer_id}
+Purchase history (most recent last): {history_str}
+
+Valid categories: {", ".join(CATEGORIES)}
+
+Based on the purchase history pattern, predict the single most likely next purchase category.
+Respond with ONLY the category name, nothing else. Example: Medicines"""
+
+    response = llm.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=10,
+        temperature=0.1,
+    )
+    raw = response.choices[0].message.content.strip()
+
+    # Validate — default to most common if LLM hallucinates
+    for cat in CATEGORIES:
+        if cat.lower() in raw.lower():
+            return cat
+    return CATEGORIES[0]  # fallback
+
+
+def run_task(task_name: str, customer_ids: list[str], total_steps: int) -> dict:
+    """Run one full task and return results."""
+    print(f"\n{'='*60}")
+    print(f"TASK: {task_name} | customers={customer_ids} | steps={total_steps}")
+    print(f"{'='*60}")
+
+    with ShopsenseEnv(base_url=ENV_URL) as env:
+        result = env.reset()
+        obs = result.observation
+
+        print(f"[RESET] customer={obs.customer_id} | history={obs.purchase_history}")
+
+        total_reward = 0.0
+        for step in range(total_steps):
+            prediction = predict_category(obs.customer_id, obs.purchase_history)
+            action = ShopsenseAction(
+                customer_id=obs.customer_id,
+                predicted_category=prediction,
+            )
+            result = env.step(action)
+            obs = result.observation
+            total_reward += result.reward
+
+            print(
+                f"[STEP {step+1:02d}] predicted={prediction} | "
+                f"actual={obs.actual_category} | reward={result.reward} | "
+                f"score={obs.score_so_far:.3f}"
+            )
+
+        final_score = obs.score_so_far
+        print(f"[DONE] final_score={final_score:.4f} | total_reward={total_reward}")
+
+    return {"task": task_name, "final_score": final_score, "total_reward": total_reward}
+
+
+def main():
+    print("ShopSense LLM Agent — Starting Evaluation")
+    print(f"Model: {MODEL_NAME}")
+    print(f"Environment: {ENV_URL}")
+
+    tasks = [
+        {"name": "easy",   "customer_ids": ["C001"],                       "total_steps": 20},
+        {"name": "medium", "customer_ids": ["C001", "C002"],               "total_steps": 30},
+        {"name": "hard",   "customer_ids": ["C001", "C002", "C003", "C004"], "total_steps": 40},
+    ]
+
+    all_results = []
+    for task in tasks:
+        result = run_task(task["name"], task["customer_ids"], task["total_steps"])
+        all_results.append(result)
+
+    # Final summary (judges parse this)
+    print("\n" + "="*60)
+    print("FINAL RESULTS")
+    print("="*60)
+    for r in all_results:
+        print(f"  {r['task']:10s} → score: {r['final_score']:.4f}")
+
+    overall = sum(r["final_score"] for r in all_results) / len(all_results)
+    print(f"\n  OVERALL SCORE: {overall:.4f}")
+    print(json.dumps({"results": all_results, "overall_score": overall}))
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Notes:
+- The LLM is prompted with just the purchase history — no system prompts needed
+- `temperature=0.1` keeps predictions consistent
+- Fallback to `CATEGORIES[0]` if LLM returns a hallucinated category name
+- Final JSON dump on stdout is what judges parse
 
 ---
 
@@ -272,18 +392,37 @@ HF_TOKEN=<Hugging Face token>
 
 **Branch:** `feature/deployment`
 
-### Dockerfile target:
+### Full `Dockerfile`:
 ```dockerfile
 FROM python:3.11-slim
+
 WORKDIR /app
+
+# Install dependencies first (layer cache)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source
 COPY . .
+
+# HF Spaces uses port 7860
 EXPOSE 7860
+
+# openenv.yaml points to server.app:app
 CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]
 ```
 
-### `openenv.yaml` (already exists, do not change):
+### `requirements.txt` to create:
+```
+openenv
+fastapi
+uvicorn[standard]
+pydantic>=2.0
+openai
+python-dotenv
+```
+
+### `openenv.yaml` (already exists — DO NOT CHANGE):
 ```yaml
 spec_version: 1
 name: shopsense_env
@@ -291,6 +430,22 @@ type: space
 runtime: fastapi
 app: server.app:app
 port: 8000
+```
+
+### How to deploy to HF Spaces:
+```bash
+# From inside shopsense-env/ directory
+openenv push
+
+# Or to a specific repo
+openenv push --repo-id Viscous106/shopsense-env
+```
+
+### HF Spaces env vars to set (in Space Settings → Variables):
+```
+API_BASE_URL = https://api-inference.huggingface.co/v1
+MODEL_NAME   = meta-llama/Llama-3.1-8B-Instruct
+HF_TOKEN     = hf_your_token_here
 ```
 
 ---
