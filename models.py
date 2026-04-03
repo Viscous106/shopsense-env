@@ -14,6 +14,11 @@ what individual customers will buy next, based on their purchase history.
 from openenv.core.env_server.types import Action, Observation
 from pydantic import Field
 
+try:
+    from .data_gen import CUSTOMER_IDS
+except ImportError:
+    from data_gen import CUSTOMER_IDS
+
 # All valid purchase categories
 CATEGORIES = ["medical", "sports", "stationary", "groceries", "fruits", "generic"]
 
@@ -52,7 +57,11 @@ class ShopsenseObservation(Observation):
     )
     purchase_history: list[str] = Field(
         default_factory=list,
-        description="All purchases seen so far, including 5-item warmup history",
+        description=(
+            "Full purchase history seen so far for this customer. "
+            f"Includes {len(CUSTOMER_IDS)} warmup purchases from reset() plus all revealed actual_category values. "
+            "Use this to infer the customer's buying pattern."
+        ),
     )
     actual_category: str = Field(
         default="",
@@ -69,18 +78,4 @@ class ShopsenseObservation(Observation):
     total_steps: int = Field(
         default=0,
         description="Total number of steps in this episode",
-    )
-    customer_id: str = Field(
-        default="",
-        description="The current customer's ID",
-    )
-
-    # In-context learning signal — grows each step
-    purchase_history: list[str] = Field(
-        default_factory=list,
-        description=(
-            "Full purchase history seen so far for this customer. "
-            "Includes warmup purchases from reset() plus all revealed actual_category values. "
-            "Use this to infer the customer's buying pattern."
-        ),
     )
