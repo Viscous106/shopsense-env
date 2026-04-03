@@ -55,7 +55,8 @@ class ShopsenseEnv(
             Dictionary representation suitable for JSON encoding
         """
         return {
-            "message": action.message,
+            "customer_id": action.customer_id,
+            "predicted_category": action.predicted_category,
         }
 
     def _parse_result(self, payload: Dict) -> StepResult[ShopsenseObservation]:
@@ -70,16 +71,20 @@ class ShopsenseEnv(
         """
         obs_data = payload.get("observation", {})
         observation = ShopsenseObservation(
-            echoed_message=obs_data.get("echoed_message", ""),
-            message_length=obs_data.get("message_length", 0),
+            customer_id=obs_data.get("customer_id", ""),
+            purchase_history=obs_data.get("purchase_history", []),
+            actual_category=obs_data.get("actual_category", ""),
+            score_so_far=obs_data.get("score_so_far", 0.0),
+            step=obs_data.get("step", 0),
+            total_steps=obs_data.get("total_steps", 0),
             done=payload.get("done", False),
-            reward=payload.get("reward"),
+            reward=payload.get("reward", 0.0),
             metadata=obs_data.get("metadata", {}),
         )
 
         return StepResult(
             observation=observation,
-            reward=payload.get("reward"),
+            reward=payload.get("reward", 0.0),
             done=payload.get("done", False),
         )
 
