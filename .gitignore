@@ -2,9 +2,11 @@
 .venv/
 venv/
 env/
+.env/
 ENV/
 
 AGENTS.md
+trials/
 
 
 # ── Python ────────────────────────────────────────────────────────
