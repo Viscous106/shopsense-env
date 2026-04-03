@@ -1,0 +1,124 @@
+{
+  "customers": {
+    "C001": {
+      "name": "Dr. Emily Chen",
+      "profession": "Doctor",
+      "weights": {
+        "medical":    0.65,
+        "sports":     0.02,
+        "stationary": 0.03,
+        "groceries":  0.12,
+        "fruits":     0.08,
+        "generic":    0.10
+      }
+    },
+    "C002": {
+      "name": "Marcus Rivera",
+      "profession": "Athlete",
+      "weights": {
+        "medical":    0.03,
+        "sports":     0.55,
+        "stationary": 0.02,
+        "groceries":  0.12,
+        "fruits":     0.18,
+        "generic":    0.10
+      }
+    },
+    "C003": {
+      "name": "Sarah Thompson",
+      "profession": "Teacher",
+      "weights": {
+        "medical":    0.03,
+        "sports":     0.03,
+        "stationary": 0.40,
+        "groceries":  0.35,
+        "fruits":     0.07,
+        "generic":    0.12
+      }
+    },
+    "C004": {
+      "name": "Dr. Raj Patel",
+      "profession": "Doctor",
+      "weights": {
+        "medical":    0.38,
+        "sports":     0.02,
+        "stationary": 0.28,
+        "groceries":  0.12,
+        "fruits":     0.10,
+        "generic":    0.10
+      }
+    },
+    "C005": {
+      "name": "Alex Kim",
+      "profession": "Student",
+      "weights": {
+        "medical":    0.02,
+        "sports":     0.08,
+        "stationary": 0.45,
+        "groceries":  0.20,
+        "fruits":     0.05,
+        "generic":    0.20
+      }
+    },
+    "C006": {
+      "name": "Chris Okafor",
+      "profession": "Athlete",
+      "weights": {
+        "medical":    0.04,
+        "sports":     0.50,
+        "stationary": 0.03,
+        "groceries":  0.15,
+        "fruits":     0.20,
+        "generic":    0.08
+      }
+    },
+    "C007": {
+      "name": "Isabella Rossi",
+      "profession": "Chef",
+      "weights": {
+        "medical":    0.02,
+        "sports":     0.02,
+        "stationary": 0.03,
+        "groceries":  0.58,
+        "fruits":     0.25,
+        "generic":    0.10
+      }
+    },
+    "C008": {
+      "name": "Dr. Priya Singh",
+      "profession": "Doctor",
+      "weights": {
+        "medical":    0.58,
+        "sports":     0.02,
+        "stationary": 0.04,
+        "groceries":  0.22,
+        "fruits":     0.05,
+        "generic":    0.09
+      }
+    },
+    "C009": {
+      "name": "James Carter",
+      "profession": "Teacher",
+      "weights": {
+        "medical":    0.03,
+        "sports":     0.20,
+        "stationary": 0.38,
+        "groceries":  0.22,
+        "fruits":     0.07,
+        "generic":    0.10
+      }
+    },
+    "C010": {
+      "name": "Lisa Nakamura",
+      "profession": "Nutritionist",
+      "weights": {
+        "medical":    0.25,
+        "sports":     0.08,
+        "stationary": 0.03,
+        "groceries":  0.18,
+        "fruits":     0.38,
+        "generic":    0.08
+      }
+    }
+  }
+}
