@@ -252,7 +252,7 @@ MANDATORY
     API_BASE_URL   The API endpoint for the LLM.
     MODEL_NAME     The model identifier to use for inference.
     HF_TOKEN       Your Hugging Face / API key.
-    LOCAL_IMAGE_NAME The name of the local image to use for the environment if you are using from_docker_image()
+    LOCALIMAGE_NAME_ The name of the local image to use for the environment if you are using from_docker_image()
                      method
 
 

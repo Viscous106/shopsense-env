@@ -54,6 +54,7 @@ app = create_app(
 
 
 @app.get("/")
+@app.get("/health")
 def root():
     """Health check — judges auto-ping this; must return HTTP 200."""
     return {
