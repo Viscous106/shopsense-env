@@ -86,34 +86,82 @@ Loaded from `data.json` at runtime. Currently 10 customers across 6 professions.
 
 ## Setup & Running
 
+### Using uv (recommended for Docker / submission)
+
 ```bash
 # Install dependencies
 uv sync --extra dev
 
-# Run the server locally
+# Run the server
 uvicorn server.app:app --host 0.0.0.0 --port 8000
 
 # Run tests
 python -m pytest tests/ -v
 
-# Build Docker image
+# Build & run Docker image
 docker build -t shopsense-env .
-
-# Run container
 docker run -p 8000:8000 shopsense-env
 ```
 
-## Inference Script
+### Using pip + venv (local development on Windows/Mac/Linux)
+
+Requires **Python 3.12** (project supports >=3.10).
 
 ```bash
-# Set environment variables
-export API_BASE_URL=https://router.huggingface.co/v1
-export MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
-export HF_TOKEN=hf_your_token
-export ENV_URL=http://localhost:8000
+# 1. Create and activate virtual environment
+py -3.12 -m venv venv
 
-# Run inference
+# Windows
+.\venv\Scripts\Activate.ps1
+
+# macOS / Linux
+source venv/bin/activate
+
+# 2. Install project + dev dependencies
+pip install -e ".[dev]"
+
+# 3. Configure environment variables
+cp .env.example .env
+# Edit .env and fill in your API key and model endpoint
+```
+
+**.env** example (using Groq):
+```
+API_BASE_URL=https://api.groq.com/openai/v1
+MODEL_NAME=llama-3.1-8b-instant
+HF_TOKEN=gsk_your_groq_or_hf_token_here
+```
+
+**.env** example (using Hugging Face):
+```
+API_BASE_URL=https://router.huggingface.co/v1
+MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
+HF_TOKEN=hf_your_token_here
+```
+
+```bash
+# 4. Start the environment server (keep this running in a separate terminal)
+python -m shopsense_env.server.app
+# Server starts at http://localhost:8000
+
+# 5. Run the LLM inference agent (in another terminal, with venv activated)
 python inference.py
+
+# 6. Run tests
+pytest
+```
+
+**Sample inference output:**
+```
+[START] task=easy env=shopsense_env model=llama-3.1-8b-instant
+[STEP] step=1 action=groceries reward=1.00 done=false error=null
+[STEP] step=2 action=medical reward=0.00 done=false error=null
+...
+[END] success=true steps=20 rewards=1.00,0.00,...
+
+    easy: score=0.3500  steps=20
+  medium: score=0.3000  steps=30
+    hard: score=0.6250  steps=40
 ```
 
 ## Deploy to Hugging Face Spaces

@@ -17,6 +17,12 @@ STDOUT FORMAT (sacred -- judges parse this strictly):
 import os
 import sys
 import traceback
+  
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed, rely on environment variables being set
 
 from openai import OpenAI
 
@@ -55,15 +61,20 @@ def predict_category(customer_id: str, purchase_history: list[str]) -> str:
         response = llm.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=MAX_TOKENS,
-            temperature=TEMPERATURE,
+            max_completion_tokens=MAX_TOKENS,
         )
         raw = response.choices[0].message.content.strip().lower()
+        print(f"[DEBUG] customer={customer_id} raw='{raw}'", file=sys.stderr)
+        # Exact word match first (prevents 'medical' matching inside longer phrases)
+        for cat in CATEGORIES:
+            if raw == cat:
+                return cat
+        # Fallback: substring match
         for cat in CATEGORIES:
             if cat in raw:
                 return cat
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[WARN] LLM call failed: {e}", file=sys.stderr)
     return "generic"  # fallback
 
 
