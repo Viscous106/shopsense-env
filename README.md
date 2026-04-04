@@ -1,6 +1,6 @@
 ---
-title: Shopsense Env Environment Server
-emoji: 🃏
+title: ShopSense Environment Server
+emoji: 🛒
 colorFrom: blue
 colorTo: red
 sdk: docker
@@ -11,245 +11,191 @@ tags:
   - openenv
 ---
 
-# Shopsense Env Environment
+# ShopSense Environment
 
-A simple test environment that echoes back messages. Perfect for testing the env APIs as well as demonstrating environment usage patterns.
+An RL environment where an LLM agent predicts customer purchase categories based on buying history. The environment simulates a shopkeeper's assistant — customers have latent purchase distributions across 6 categories, and the agent must learn each customer's pattern from their history to predict what they'll buy next.
+
+## Why This Environment
+
+- **Real-world task**: customer behavior prediction is a genuine retail/e-commerce challenge
+- **Partial-credit reward**: each step contributes independently; score = correct / total
+- **Meaningful difficulty**: easy customers have one dominant category (~65%), hard customers have flatter distributions or share professions (two doctors with opposite buying habits)
+- **Dynamic data**: add or remove customers by editing `data.json` — no code changes needed
 
 ## Quick Start
 
-The simplest way to use the Shopsense Env environment is through the `ShopsenseEnv` class:
-
 ```python
 from shopsense_env import ShopsenseAction, ShopsenseEnv
 
-try:
-    # Create environment from Docker image
-    shopsense_envenv = ShopsenseEnv.from_docker_image("shopsense_env-env:latest")
+with ShopsenseEnv(base_url="http://localhost:8000").sync() as env:
+    result = env.reset(customer_ids=["C001"], total_steps=20)
+    obs = result.observation
 
-    # Reset
-    result = shopsense_envenv.reset()
-    print(f"Reset: {result.observation.echoed_message}")
+    for _ in range(20):
+        action = ShopsenseAction(
+            customer_id=obs.customer_id,
+            predicted_category="medical",  # C001's dominant category
+        )
+        result = env.step(action)
+        obs = result.observation
+        print(f"Step {obs.step}: predicted=medical, actual={obs.actual_category}, reward={result.reward}")
 
-    # Send multiple messages
-    messages = ["Hello, World!", "Testing echo", "Final message"]
-
-    for msg in messages:
-        result = shopsense_envenv.step(ShopsenseAction(message=msg))
-        print(f"Sent: '{msg}'")
-        print(f"  → Echoed: '{result.observation.echoed_message}'")
-        print(f"  → Length: {result.observation.message_length}")
-        print(f"  → Reward: {result.reward}")
-
-finally:
-    # Always clean up
-    shopsense_envenv.close()
+    print(f"Final score: {obs.score_so_far:.2f}")
 ```
 
-That's it! The `ShopsenseEnv.from_docker_image()` method handles:
-- Starting the Docker container
-- Waiting for the server to be ready
-- Connecting to the environment
-- Container cleanup when you call `close()`
+## Action Space
 
-## Building the Docker Image
+**ShopsenseAction**:
+| Field | Type | Description |
+|---|---|---|
+| `customer_id` | str | ID of the customer (e.g. `"C001"`) |
+| `predicted_category` | str | One of: `medical`, `sports`, `stationary`, `groceries`, `fruits`, `generic` |
 
-Before using the environment, you need to build the Docker image:
+## Observation Space
+
+**ShopsenseObservation** (inherits `done`, `reward`, `metadata` from base):
+| Field | Type | Description |
+|---|---|---|
+| `customer_id` | str | Current customer ID |
+| `purchase_history` | list[str] | All purchases so far (warmup + revealed actuals) |
+| `actual_category` | str | Ground truth revealed after prediction |
+| `score_so_far` | float | Running normalized score [0.0, 1.0] |
+| `step` | int | Current step number (1-indexed) |
+| `total_steps` | int | Total steps in this episode |
+
+## Reward Function
+
+- **Per-step**: binary 1.0 (correct) or 0.0 (wrong), case-insensitive
+- **Episode score**: `correct_predictions / total_steps` — always in [0.0, 1.0]
+- **Random baseline**: ~1/6 = 0.167 (uniform guess across 6 categories)
+- **Good LLM agent**: 0.55 - 0.80 depending on task difficulty
+
+## Tasks
+
+Tasks are built dynamically from `data.json` — difficulty scales with customer pool size and distribution entropy.
+
+| Task | Customers | Steps | Expected Baseline | Description |
+|---|---|---|---|---|
+| Easy | 1 (highest mode) | 20 | ~0.65 | Single customer with a clear dominant category |
+| Medium | 2-5 (easiest subset) | 30 | ~0.50 | Multiple customers; agent must adapt per-episode |
+| Hard | All (currently 10) | 40 | ~0.40 | Full pool including tricky pairs (doctors with opposite habits) |
+
+## Customer Profiles
+
+Loaded from `data.json` at runtime. Currently 10 customers across 6 professions. Each has a probability distribution over 6 purchase categories. To add customers, edit `data.json` — environment and tasks adapt automatically.
+
+## Setup & Running
+
+### Using uv (recommended for Docker / submission)
 
 ```bash
-# From project root
-docker build -t shopsense_env-env:latest -f server/Dockerfile .
+# Install dependencies
+uv sync --extra dev
+
+# Run the server
+uvicorn server.app:app --host 0.0.0.0 --port 8000
+
+# Run tests
+python -m pytest tests/ -v
+
+# Build & run Docker image
+docker build -t shopsense-env .
+docker run -p 8000:8000 shopsense-env
 ```
 
-## Deploying to Hugging Face Spaces
+### Using pip + venv (local development on Windows/Mac/Linux)
 
-You can easily deploy your OpenEnv environment to Hugging Face Spaces using the `openenv push` command:
+Requires **Python 3.12** (project supports >=3.10).
 
 ```bash
-# From the environment directory (where openenv.yaml is located)
-openenv push
+# 1. Create and activate virtual environment
+py -3.12 -m venv venv
 
-# Or specify options
-openenv push --namespace my-org --private
+# Windows
+.\venv\Scripts\Activate.ps1
+
+# macOS / Linux
+source venv/bin/activate
+
+# 2. Install project + dev dependencies
+pip install -e ".[dev]"
+
+# 3. Configure environment variables
+cp .env.example .env
+# Edit .env and fill in your API key and model endpoint
 ```
 
-The `openenv push` command will:
-1. Validate that the directory is an OpenEnv environment (checks for `openenv.yaml`)
-2. Prepare a custom build for Hugging Face Docker space (enables web interface)
-3. Upload to Hugging Face (ensuring you're logged in)
+**.env** example (using Groq):
+```
+API_BASE_URL=https://api.groq.com/openai/v1
+MODEL_NAME=llama-3.1-8b-instant
+HF_TOKEN=gsk_your_groq_or_hf_token_here
+```
 
-### Prerequisites
-
-- Authenticate with Hugging Face: The command will prompt for login if not already authenticated
-
-### Options
-
-- `--directory`, `-d`: Directory containing the OpenEnv environment (defaults to current directory)
-- `--repo-id`, `-r`: Repository ID in format 'username/repo-name' (defaults to 'username/env-name' from openenv.yaml)
-- `--base-image`, `-b`: Base Docker image to use (overrides Dockerfile FROM)
-- `--private`: Deploy the space as private (default: public)
-
-### Examples
+**.env** example (using Hugging Face):
+```
+API_BASE_URL=https://router.huggingface.co/v1
+MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
+HF_TOKEN=hf_your_token_here
+```
 
 ```bash
-# Push to your personal namespace (defaults to username/env-name from openenv.yaml)
-openenv push
+# 4. Start the environment server (keep this running in a separate terminal)
+python -m shopsense_env.server.app
+# Server starts at http://localhost:8000
 
-# Push to a specific repository
-openenv push --repo-id my-org/my-env
+# 5. Run the LLM inference agent (in another terminal, with venv activated)
+python inference.py
 
-# Push with a custom base image
-openenv push --base-image ghcr.io/meta-pytorch/openenv-base:latest
-
-# Push as a private space
-openenv push --private
-
-# Combine options
-openenv push --repo-id my-org/my-env --base-image custom-base:latest --private
+# 6. Run tests
+pytest
 ```
 
-After deployment, your space will be available at:
-`https://huggingface.co/spaces/<repo-id>`
+**Sample inference output:**
+```
+[START] task=easy env=shopsense_env model=llama-3.1-8b-instant
+[STEP] step=1 action=groceries reward=1.00 done=false error=null
+[STEP] step=2 action=medical reward=0.00 done=false error=null
+...
+[END] success=true steps=20 rewards=1.00,0.00,...
 
-The deployed space includes:
-- **Web Interface** at `/web` - Interactive UI for exploring the environment
-- **API Documentation** at `/docs` - Full OpenAPI/Swagger interface
-- **Health Check** at `/health` - Container health monitoring
-- **WebSocket** at `/ws` - Persistent session endpoint for low-latency interactions
-
-## Environment Details
-
-### Action
-**ShopsenseAction**: Contains a single field
-- `message` (str) - The message to echo back
-
-### Observation
-**ShopsenseObservation**: Contains the echo response and metadata
-- `echoed_message` (str) - The message echoed back
-- `message_length` (int) - Length of the message
-- `reward` (float) - Reward based on message length (length × 0.1)
-- `done` (bool) - Always False for echo environment
-- `metadata` (dict) - Additional info like step count
-
-### Reward
-The reward is calculated as: `message_length × 0.1`
-- "Hi" → reward: 0.2
-- "Hello, World!" → reward: 1.3
-- Empty message → reward: 0.0
-
-## Advanced Usage
-
-### Connecting to an Existing Server
-
-If you already have a Shopsense Env environment server running, you can connect directly:
-
-```python
-from shopsense_env import ShopsenseEnv
-
-# Connect to existing server
-shopsense_envenv = ShopsenseEnv(base_url="<ENV_HTTP_URL_HERE>")
-
-# Use as normal
-result = shopsense_envenv.reset()
-result = shopsense_envenv.step(ShopsenseAction(message="Hello!"))
+    easy: score=0.3500  steps=20
+  medium: score=0.3000  steps=30
+    hard: score=0.6250  steps=40
 ```
 
-Note: When connecting to an existing server, `shopsense_envenv.close()` will NOT stop the server.
-
-### Using the Context Manager
-
-The client supports context manager usage for automatic connection management:
-
-```python
-from shopsense_env import ShopsenseAction, ShopsenseEnv
-
-# Connect with context manager (auto-connects and closes)
-with ShopsenseEnv(base_url="http://localhost:8000") as env:
-    result = env.reset()
-    print(f"Reset: {result.observation.echoed_message}")
-    # Multiple steps with low latency
-    for msg in ["Hello", "World", "!"]:
-        result = env.step(ShopsenseAction(message=msg))
-        print(f"Echoed: {result.observation.echoed_message}")
-```
-
-The client uses WebSocket connections for:
-- **Lower latency**: No HTTP connection overhead per request
-- **Persistent session**: Server maintains your environment state
-- **Efficient for episodes**: Better for many sequential steps
-
-### Concurrent WebSocket Sessions
-
-The server supports multiple concurrent WebSocket connections. To enable this,
-modify `server/app.py` to use factory mode:
-
-```python
-# In server/app.py - use factory mode for concurrent sessions
-app = create_app(
-    ShopsenseEnvironment,  # Pass class, not instance
-    ShopsenseAction,
-    ShopsenseObservation,
-    max_concurrent_envs=4,  # Allow 4 concurrent sessions
-)
-```
-
-Then multiple clients can connect simultaneously:
-
-```python
-from shopsense_env import ShopsenseAction, ShopsenseEnv
-from concurrent.futures import ThreadPoolExecutor
-
-def run_episode(client_id: int):
-    with ShopsenseEnv(base_url="http://localhost:8000") as env:
-        result = env.reset()
-        for i in range(10):
-            result = env.step(ShopsenseAction(message=f"Client {client_id}, step {i}"))
-        return client_id, result.observation.message_length
-
-# Run 4 episodes concurrently
-with ThreadPoolExecutor(max_workers=4) as executor:
-    results = list(executor.map(run_episode, range(4)))
-```
-
-## Development & Testing
-
-### Direct Environment Testing
-
-Test the environment logic directly without starting the HTTP server:
+## Deploy to Hugging Face Spaces
 
 ```bash
-# From the server directory
-python3 server/shopsense_env_environment.py
-```
-
-This verifies that:
-- Environment resets correctly
-- Step executes actions properly
-- State tracking works
-- Rewards are calculated correctly
-
-### Running Locally
-
-Run the server locally for development:
-
-```bash
-uvicorn server.app:app --reload
+openenv push --repo-id Viscous106/shopsense-env
 ```
 
 ## Project Structure
 
 ```
-shopsense_env/
-├── .dockerignore         # Docker build exclusions
-├── __init__.py            # Module exports
-├── README.md              # This file
+shopsense-env/
 ├── openenv.yaml           # OpenEnv manifest
-├── pyproject.toml         # Project metadata and dependencies
-├── uv.lock                # Locked dependencies (generated)
-├── client.py              # ShopsenseEnv client
-├── models.py              # Action and Observation models
-└── server/
-    ├── __init__.py        # Server module exports
-    ├── shopsense_env_environment.py  # Core environment logic
-    ├── app.py             # FastAPI application (HTTP + WebSocket endpoints)
-    └── Dockerfile         # Container image definition
+├── pyproject.toml          # Project metadata & dependencies
+├── Dockerfile              # Container build
+├── requirements.txt        # Pip dependencies for Docker
+├── inference.py            # LLM agent inference script
+├── models.py               # ShopsenseAction, ShopsenseObservation
+├── data_gen.py             # Customer profiles & sampling from data.json
+├── data.json               # Customer probability distributions
+├── reward.py               # Reward computation & normalization
+├── client.py               # ShopsenseEnv WebSocket client
+├── __init__.py             # Package exports
+├── tasks/
+│   └── __init__.py         # TaskConfig definitions (easy/medium/hard)
+├── server/
+│   ├── __init__.py
+│   ├── app.py              # FastAPI application
+│   └── shopsense_env_environment.py  # Core environment logic
+└── tests/
+    ├── conftest.py
+    ├── test_data_gen.py
+    ├── test_reward.py
+    ├── test_environment.py
+    ├── test_models.py
+    └── test_tasks.py
 ```

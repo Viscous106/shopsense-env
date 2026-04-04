@@ -12,7 +12,10 @@ from openenv.core import EnvClient
 from openenv.core.client_types import StepResult
 from openenv.core.env_server.types import State
 
-from .models import ShopsenseAction, ShopsenseObservation
+try:
+    from .models import ShopsenseAction, ShopsenseObservation
+except ImportError:
+    from models import ShopsenseAction, ShopsenseObservation
 
 
 class ShopsenseEnv(

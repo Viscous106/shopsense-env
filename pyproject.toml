@@ -39,6 +39,10 @@ dev = [
 # or: python -m shopsense_env.server.app
 server = "shopsense_env.server.app:main"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib --ignore=__init__.py --ignore=client.py"
+
 [tool.setuptools]
 include-package-data = true
 packages = ["shopsense_env", "shopsense_env.server"]

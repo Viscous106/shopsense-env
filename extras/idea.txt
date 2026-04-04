@@ -1,0 +1,24 @@
+For example a shop keeper sees certain types of customers with AI:
+
+person1: A doctor which buys medial items 80% of the time, and 20% generic things.
+
+person2: A sports player which buys 65% times sports item, 20% times groceries and other times generic stuff.
+
+person3: A teacher which buys 40% times stationary, 40% times groceries, 20% generic stuff.
+
+person4: Doctor two that buys 40% times stationary, 40% times fruits, 20% generic.
+
+A total of 10 is initially taken but the count is not fixed. data.json contains the data, to get the total count just count the total there.
+ 
+
+Given the ID of the customer, the Model has to train on what he will buy.
+
+ 
+
+The data will be fully dummy with distribution defined for each person.
+
+Each times the ML gets it right it receives some points.
+
+There will be a maximum score which we will determine (can be determined with simple code).
+
+The final score has to be between 0 to 1 so we will normalize it using a normalizing funtion like normal division or better sigmoid or tanh.
