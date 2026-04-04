@@ -29,8 +29,7 @@ develop-eggs/
 lib/
 lib64/
 
-# ── uv / pip ──────────────────────────────────────────────────────
-uv.lock
+# ── uv / pip ──────────────────────────
 .uv/
 pip-log.txt
 pip-delete-this-directory.txt

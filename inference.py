@@ -32,12 +32,12 @@ from tasks import TASKS, get_task
 # ── Configuration ─────────────────────────────────────────────────────────────
 IMAGE_NAME = os.getenv("IMAGE_NAME")
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
 ENV_URL = os.getenv("ENV_URL", "http://localhost:8000")
 BENCHMARK = "shopsense_env"
 MAX_STEPS = 50
-TEMPERATURE = 0.1
+TEMPERATURE = 0.4
 MAX_TOKENS = 10
 
 CATEGORIES = ["medical", "sports", "stationary", "groceries", "fruits", "generic"]
@@ -62,6 +62,7 @@ def predict_category(customer_id: str, purchase_history: list[str]) -> str:
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
             max_completion_tokens=MAX_TOKENS,
+            temperature=TEMPERATURE,
         )
         raw = response.choices[0].message.content.strip().lower()
         print(f"[DEBUG] customer={customer_id} raw='{raw}'", file=sys.stderr)
@@ -156,10 +157,10 @@ def main():
         result = run_task(name)
         all_results.append(result)
 
-    print()
+    print(file=sys.stderr)
     for r in all_results:
         avg = sum(r["rewards"]) / len(r["rewards"]) if r["rewards"] else 0.0
-        print(f"  {r['task']:>8s}: score={avg:.4f}  steps={r['steps']}")
+        print(f"  {r['task']:>8s}: score={avg:.4f}  steps={r['steps']}", file=sys.stderr)
 
 
 if __name__ == "__main__":
