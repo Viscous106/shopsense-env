@@ -24,14 +24,21 @@ try:
 except ImportError:
     pass  # dotenv not installed, rely on environment variables being set
 
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 
-from shopsense_env import ShopsenseEnv, ShopsenseAction
+try:
+    from shopsense_env import ShopsenseEnv, ShopsenseAction
+except ImportError:
+    from client import ShopsenseEnv
+    from models import ShopsenseAction
 from tasks import TASKS, get_task
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 IMAGE_NAME = os.getenv("IMAGE_NAME")
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
 API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
 ENV_URL = os.getenv("ENV_URL", "http://localhost:8000")
@@ -42,11 +49,30 @@ MAX_TOKENS = 10
 
 CATEGORIES = ["medical", "sports", "stationary", "groceries", "fruits", "generic"]
 
-llm = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+
+def _create_llm_client():
+    if OpenAI is None:
+        print("[WARN] openai package not installed; using fallback policy", file=sys.stderr)
+        return None
+    if not API_KEY:
+        print("[WARN] Missing API key (HF_TOKEN/API_KEY/OPENAI_API_KEY); using fallback policy", file=sys.stderr)
+        return None
+
+    try:
+        return OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+    except Exception as exc:
+        print(f"[WARN] Failed to initialize LLM client: {exc}", file=sys.stderr)
+        return None
+
+
+llm = _create_llm_client()
 
 
 def predict_category(customer_id: str, purchase_history: list[str]) -> str:
     """Ask the LLM to predict the next purchase category."""
+    if llm is None:
+        return "generic"
+
     history_str = ", ".join(purchase_history[-20:]) if purchase_history else "none"
 
     prompt = (
