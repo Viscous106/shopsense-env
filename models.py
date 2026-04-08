@@ -16,8 +16,11 @@ from pydantic import Field
 
 try:
     from .data_gen import CUSTOMER_IDS
-except ImportError:
-    from data_gen import CUSTOMER_IDS
+except (ImportError, Exception):
+    try:
+        from data_gen import CUSTOMER_IDS
+    except Exception:
+        CUSTOMER_IDS = ()  # fallback when data.json is unavailable
 
 # All valid purchase categories
 CATEGORIES = ["medical", "sports", "stationary", "groceries", "fruits", "generic"]

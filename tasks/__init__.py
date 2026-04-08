@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 
 try:
     from ..data_gen import get_all_customer_ids, CUSTOMER_DISTRIBUTIONS
-except ImportError:
+except Exception:
     from data_gen import get_all_customer_ids, CUSTOMER_DISTRIBUTIONS
 
 

@@ -48,3 +48,6 @@ addopts = "--import-mode=importlib --ignore=__init__.py --ignore=client.py"
 include-package-data = true
 packages = ["shopsense_env", "shopsense_env.server"]
 package-dir = { "shopsense_env" = ".", "shopsense_env.server" = "server" }
+
+[tool.setuptools.package-data]
+shopsense_env = ["data.json"]

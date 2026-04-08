@@ -31,7 +31,7 @@ except ImportError:
 
 try:
     from shopsense_env import ShopsenseEnv, ShopsenseAction
-except ImportError:
+except Exception:
     from client import ShopsenseEnv
     from models import ShopsenseAction
 from tasks import TASKS, get_task

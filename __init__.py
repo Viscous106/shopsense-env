@@ -9,7 +9,7 @@
 try:
     from .client import ShopsenseEnv
     from .models import ShopsenseAction, ShopsenseObservation
-except ImportError:
+except Exception:
     from client import ShopsenseEnv
     from models import ShopsenseAction, ShopsenseObservation
 

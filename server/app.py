@@ -38,7 +38,7 @@ except Exception as e:  # pragma: no cover
 try:
     from ..models import ShopsenseAction, ShopsenseObservation
     from .shopsense_env_environment import ShopsenseEnvironment
-except (ImportError, SystemError):
+except (ImportError, SystemError, Exception):
     from models import ShopsenseAction, ShopsenseObservation
     from server.shopsense_env_environment import ShopsenseEnvironment
 

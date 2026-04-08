@@ -14,7 +14,7 @@ from openenv.core.env_server.types import State
 
 try:
     from .models import ShopsenseAction, ShopsenseObservation
-except ImportError:
+except Exception:
     from models import ShopsenseAction, ShopsenseObservation
 
 
