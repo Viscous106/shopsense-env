@@ -169,7 +169,7 @@ class ShopsenseEnvironment(Environment):
         reward = compute_reward(action.predicted_category, actual)
 
         self._step_num += 1
-        self._correct += int(reward)
+        self._correct += 1 if reward >= 0.5 else 0
         self._purchase_history.append(actual)
         self._rewards.append(reward)
         self._done = self._step_num >= self._total_steps
@@ -188,7 +188,7 @@ class ShopsenseEnvironment(Environment):
             reward=reward,
             metadata={
                 "prediction": action.predicted_category,
-                "correct": reward == 1.0,
+                "correct": reward >= 0.5,
             },
         )
 

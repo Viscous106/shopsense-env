@@ -108,7 +108,7 @@ class TestStep:
     def test_reward_binary(self):
         env = self._make_env()
         obs = env.step(ShopsenseAction(customer_id="C001", predicted_category="medical"))
-        assert obs.reward in (0.0, 1.0)
+        assert obs.reward in (0.0001, 0.9999)
 
     def test_done_at_total_steps(self):
         env = self._make_env(total_steps=3)
