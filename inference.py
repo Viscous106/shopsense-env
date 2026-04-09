@@ -145,7 +145,7 @@ def run_task(task_name: str) -> dict:
                 print(
                     f"[STEP] step={step_num} "
                     f"action={prediction} "
-                    f"reward={r:.2f} "
+                    f"reward={r:.4f} "
                     f"done={'true' if done else 'false'} "
                     f"error={error_str or 'null'}"
                 )
@@ -159,7 +159,7 @@ def run_task(task_name: str) -> dict:
         last_error = str(exc)
         traceback.print_exc(file=sys.stderr)
 
-    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    rewards_str = ",".join(f"{r:.4f}" for r in rewards)
     print(
         f"[END] success={'true' if success else 'false'} "
         f"steps={steps_taken} "

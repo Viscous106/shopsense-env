@@ -5,7 +5,8 @@ Reward design
 -------------
 - Binary per-step reward: 1.0 if the agent's prediction matches the ground truth,
   0.0 otherwise.
-- Normalized score: correct_predictions / total_steps_taken → always in [0.0, 1.0].
+- Normalized score: correct_predictions / total_steps_taken → clamped to (0.0, 1.0)
+  exclusive (never exactly 0.0 or 1.0) as required by the evaluation platform.
 - Trivial random baseline: ~1/6 ≈ 0.167 (6 categories, uniform guess).
 - A well-calibrated LLM agent should score 0.55–0.80 depending on the task.
 
@@ -32,27 +33,28 @@ def compute_reward(prediction: str, ground_truth: str) -> float:
     Returns:
         1.0 if correct, 0.0 if incorrect.
     """
-    return 1.0 if prediction.strip().lower() == ground_truth.strip().lower() else 0.0
+    return 0.9999 if prediction.strip().lower() == ground_truth.strip().lower() else 0.0001
 
 
 def normalize_score(correct: int, total: int) -> float:
     """
-    Normalize the running score to [0.0, 1.0].
+    Normalize the running score to the open interval (0.0, 1.0) exclusive.
 
-    Simple division: correct_predictions / total_steps_taken.
-    Handles the edge case of zero steps (returns 0.0).
-    Instead of using normal division we will use a better squash function like tanh or sigmoid.
+    Simple division: correct_predictions / total_steps_taken, clamped so the
+    result is strictly greater than 0 and strictly less than 1 as required by
+    the evaluation platform.
 
     Args:
         correct: Number of correct predictions so far.
         total:   Total number of steps taken so far.
 
     Returns:
-        Float in [0.0, 1.0].
+        Float strictly in (0.0, 1.0) — never exactly 0.0 or 1.0.
     """
     if total == 0:
-        return 0.0
-    return round(correct / total, 4)
+        return 0.0001
+    score = round(correct / total, 4)
+    return max(0.0001, min(0.9999, score))
 
 
 def expected_baseline_score(customer_id: str) -> float:
