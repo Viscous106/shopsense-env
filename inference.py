@@ -163,10 +163,12 @@ def run_task(task_name: str) -> dict:
         traceback.print_exc(file=sys.stderr)
 
     rewards_str = ",".join(f"{r:.3f}" for r in rewards)
+    score = sum(rewards) / len(rewards) if rewards else 0.001
+    score = max(0.001, min(0.999, score))
+
     print(
-        f"[END] success={'true' if success else 'false'} "
-        f"steps={steps_taken} "
-        f"rewards={rewards_str}"
+        f"[END] task={task_name} success={'true' if success else 'false'} "
+        f"steps={steps_taken} score={score:.3f} rewards={rewards_str}"
     )
 
     return {
