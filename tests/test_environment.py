@@ -108,7 +108,7 @@ class TestStep:
     def test_reward_binary(self):
         env = self._make_env()
         obs = env.step(ShopsenseAction(customer_id="C001", predicted_category="medical"))
-        assert obs.reward in (0.0001, 0.9999)
+        assert obs.reward in (0.01, 0.99)
 
     def test_done_at_total_steps(self):
         env = self._make_env(total_steps=3)
@@ -208,7 +208,7 @@ class TestFullEpisode:
             else:
                 assert obs.done is True
 
-        assert obs.score_so_far == pytest.approx(sum(rewards) / 20, abs=1e-3)
+        assert obs.score_so_far == pytest.approx(sum(rewards) / 20, abs=0.02)
         # C001 medical ~65%, expect decent score
         assert obs.score_so_far > 0.3
 

@@ -33,7 +33,7 @@ def compute_reward(prediction: str, ground_truth: str) -> float:
     Returns:
         1.0 if correct, 0.0 if incorrect.
     """
-    return 0.9999 if prediction.strip().lower() == ground_truth.strip().lower() else 0.0001
+    return 0.99 if prediction.strip().lower() == ground_truth.strip().lower() else 0.01
 
 
 def normalize_score(correct: int, total: int) -> float:
@@ -52,9 +52,9 @@ def normalize_score(correct: int, total: int) -> float:
         Float strictly in (0.0, 1.0) — never exactly 0.0 or 1.0.
     """
     if total == 0:
-        return 0.0001
-    score = round(correct / total, 4)
-    return max(0.0001, min(0.9999, score))
+        return 0.01
+    score = round(correct / total, 2)
+    return max(0.01, min(0.99, score))
 
 
 def expected_baseline_score(customer_id: str) -> float:

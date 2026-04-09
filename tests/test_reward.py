@@ -8,42 +8,42 @@ from data_gen import CUSTOMER_IDS
 
 class TestComputeReward:
     def test_exact_match(self):
-        assert compute_reward("medical", "medical") == 0.9999
+        assert compute_reward("medical", "medical") == 0.99
 
     def test_mismatch(self):
-        assert compute_reward("medical", "sports") == 0.0001
+        assert compute_reward("medical", "sports") == 0.01
 
     def test_case_insensitive(self):
-        assert compute_reward("Medical", "medical") == 0.9999
-        assert compute_reward("SPORTS", "sports") == 0.9999
+        assert compute_reward("Medical", "medical") == 0.99
+        assert compute_reward("SPORTS", "sports") == 0.99
 
     def test_whitespace_stripped(self):
-        assert compute_reward("  medical  ", "medical") == 0.9999
-        assert compute_reward("medical", "  medical\n") == 0.9999
+        assert compute_reward("  medical  ", "medical") == 0.99
+        assert compute_reward("medical", "  medical\n") == 0.99
 
     def test_all_categories_match_self(self):
         from models import CATEGORIES
 
         for cat in CATEGORIES:
-            assert compute_reward(cat, cat) == 0.9999
+            assert compute_reward(cat, cat) == 0.99
 
     def test_empty_strings(self):
-        assert compute_reward("", "") == 0.9999
-        assert compute_reward("", "medical") == 0.0001
+        assert compute_reward("", "") == 0.99
+        assert compute_reward("", "medical") == 0.01
 
 
 class TestNormalizeScore:
     def test_zero_steps(self):
-        assert normalize_score(0, 0) == 0.0001
+        assert normalize_score(0, 0) == 0.01
 
     def test_perfect_score(self):
-        assert normalize_score(10, 10) == 0.9999
+        assert normalize_score(10, 10) == 0.99
 
     def test_half_score(self):
         assert normalize_score(5, 10) == 0.5
 
     def test_one_correct(self):
-        assert normalize_score(1, 3) == pytest.approx(0.3333, abs=1e-3)
+        assert normalize_score(1, 3) == pytest.approx(0.33, abs=1e-2)
 
     def test_result_in_range(self):
         for correct in range(21):

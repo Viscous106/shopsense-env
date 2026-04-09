@@ -145,7 +145,7 @@ def run_task(task_name: str) -> dict:
                 print(
                     f"[STEP] step={step_num} "
                     f"action={prediction} "
-                    f"reward={r:.4f} "
+                    f"reward={r:.2f} "
                     f"done={'true' if done else 'false'} "
                     f"error={error_str or 'null'}"
                 )
@@ -159,7 +159,7 @@ def run_task(task_name: str) -> dict:
         last_error = str(exc)
         traceback.print_exc(file=sys.stderr)
 
-    rewards_str = ",".join(f"{r:.4f}" for r in rewards)
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(
         f"[END] success={'true' if success else 'false'} "
         f"steps={steps_taken} "
@@ -186,7 +186,7 @@ def main():
     print(file=sys.stderr)
     for r in all_results:
         avg = sum(r["rewards"]) / len(r["rewards"]) if r["rewards"] else 0.0
-        print(f"  {r['task']:>8s}: score={avg:.4f}  steps={r['steps']}", file=sys.stderr)
+        print(f"  {r['task']:>8s}: score={avg:.2f}  steps={r['steps']}", file=sys.stderr)
 
 
 if __name__ == "__main__":
