@@ -189,6 +189,7 @@ class ShopsenseEnvironment(Environment):
             metadata={
                 "prediction": action.predicted_category,
                 "correct": reward >= 0.5,
+                "grader_score": score,
             },
         )
 

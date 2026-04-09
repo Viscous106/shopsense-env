@@ -10,19 +10,16 @@ tasks:
     difficulty: easy
     grader:
       type: deterministic
-      endpoint: /grader
     description: Single easiest customer. Dominant category has ~60% probability.
 
   - id: medium
     difficulty: medium
     grader:
       type: deterministic
-      endpoint: /grader
     description: 3-5 customers with clearest buying patterns. Agent must adapt to different profiles across episodes.
 
   - id: hard
     difficulty: hard
     grader:
       type: deterministic
-      endpoint: /grader
     description: All 10 customers including tricky pairs. Requires learning from history, not labels.

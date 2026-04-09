@@ -167,9 +167,8 @@ def run_task(task_name: str) -> dict:
     score = max(0.001, min(0.999, score))
 
     print(
-        f"[END] success={'true' if success else 'false'} "
-        f"steps={steps_taken} "
-        f"rewards={rewards_str}"
+        f"[END] task={task_name} success={'true' if success else 'false'} "
+        f"steps={steps_taken} score={score:.3f} rewards={rewards_str}"
     )
 
     return {
